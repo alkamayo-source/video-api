@@ -202,4 +202,3 @@ Common error codes:
 
 - **Bot**: [@MultifulDobi_bot](https://t.me/MultifulDobi_bot)
 - **Issues**: [github.com/alkamayo-source/video-api/issues](https://github.com/alkamayo-source/video-api/issues)
-- **Maintainer**: [@eardori](https://github.com/eardori)
