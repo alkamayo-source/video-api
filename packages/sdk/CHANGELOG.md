@@ -1,5 +1,14 @@
 # @multiful/video-api-sdk
 
+## 0.2.1
+
+### Patch Changes
+
+- 764de7c: Migrated source repo to [alkamayo-source/video-api](https://github.com/alkamayo-source/video-api).
+  The SDK and MCP server are now developed in a public, dedicated repository
+  separate from the bot/server implementation. No code or API changes — only
+  package metadata (`repository`, `homepage`, `bugs`) updated.
+
 ## 0.2.0
 
 ### Minor Changes
