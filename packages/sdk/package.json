@@ -1,6 +1,6 @@
 {
   "name": "@multiful/video-api-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript SDK for the Multiful Video API — autonomous-agent friendly",
   "license": "MIT",
   "type": "module",
