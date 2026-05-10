@@ -1,0 +1,33 @@
+{
+  "name": "video-api",
+  "version": "0.0.0",
+  "description": "Public TypeScript SDK + MCP server + docs for the Multiful Video API",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm -w @multiful/video-api-sdk run build && npm -w @multiful/video-api-mcp run build",
+    "build:sdk": "npm -w @multiful/video-api-sdk run build",
+    "build:mcp": "npm -w @multiful/video-api-mcp run build",
+    "gen:types": "npm -w @multiful/video-api-sdk run gen:types",
+    "test": "npm -w @multiful/video-api-sdk run test",
+    "typecheck": "npm -w @multiful/video-api-sdk run typecheck && npm -w @multiful/video-api-mcp run typecheck"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alkamayo-source/video-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alkamayo-source/video-api/issues"
+  },
+  "homepage": "https://github.com/alkamayo-source/video-api#readme"
+}

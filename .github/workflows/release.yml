@@ -1,0 +1,59 @@
+name: Release SDK / MCP
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # Only run if the changeset workflow has changesets to consume,
+    # OR a "Version Packages" PR is being merged.
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build SDK
+        run: npm -w @multiful/video-api-sdk run build
+
+      - name: Build MCP
+        run: npm -w @multiful/video-api-mcp run build
+
+      - name: Create Release Pull Request or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # When changesets exist on main → opens "Version Packages" PR
+          # When that PR is merged (no changesets remain, version bumps in place) → publishes to npm
+          publish: npx changeset publish
+          version: npx changeset version
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Both vars point to the same secret. NODE_AUTH_TOKEN is what
+          # actions/setup-node@v4's auto-generated .npmrc references via
+          # `_authToken=${NODE_AUTH_TOKEN}`. NPM_TOKEN is what some
+          # changesets/action code paths read directly. Setting both
+          # avoids the silent 404 we hit when only NPM_TOKEN was set.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

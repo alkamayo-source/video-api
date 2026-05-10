@@ -1,0 +1,68 @@
+name: SDK + MCP CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "docs/openapi.yaml"
+      - ".github/workflows/sdk-mcp-ci.yml"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    paths:
+      - "packages/**"
+      - "docs/openapi.yaml"
+      - ".github/workflows/sdk-mcp-ci.yml"
+      - "package.json"
+      - "package-lock.json"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # --legacy-peer-deps mirrors the production install (Render uses the same flag)
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # Regenerate types and fail if the committed file is stale.
+      # Forces contributors to re-run `npm run gen:types` after editing openapi.yaml.
+      - name: Generate SDK types from OpenAPI
+        run: npm run gen:types
+
+      - name: Verify generated types are not stale
+        run: |
+          if ! git diff --exit-code packages/sdk/src/generated/; then
+            echo ""
+            echo "::error::Generated SDK types are stale. Run 'npm run gen:types' locally and commit the result."
+            exit 1
+          fi
+
+      - name: Typecheck SDK
+        run: npm -w @multiful/video-api-sdk run typecheck
+
+      - name: Build SDK
+        run: npm -w @multiful/video-api-sdk run build
+
+      - name: Test SDK
+        run: npm -w @multiful/video-api-sdk run test
+
+      - name: Typecheck MCP
+        run: npm -w @multiful/video-api-mcp run typecheck
+
+      - name: Build MCP
+        run: npm -w @multiful/video-api-mcp run build
+
+      # Quick sanity check: package contents match what we'd publish
+      - name: SDK publish dry-run
+        run: npm -w @multiful/video-api-sdk publish --dry-run
+
+      - name: MCP publish dry-run
+        run: npm -w @multiful/video-api-mcp publish --dry-run

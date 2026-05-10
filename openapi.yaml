@@ -1,0 +1,1306 @@
+openapi: 3.1.0
+info:
+  title: NSFW Video API
+  version: 1.4.0
+  description: |
+    # NSFW Video API
+
+    AI-powered Image-to-Video conversion API for NSFW content.
+
+    **Age Restriction**: This API is intended for **adults only (18+)**. By using this API, you confirm that you are of legal age in your jurisdiction.
+
+    ---
+
+    ## Implementation Status
+
+    | Component | Status | Description |
+    |-----------|--------|-------------|
+    | Video Generation | ✅ Implemented | POST /v1/video/generate |
+    | Video Status | ✅ Implemented | GET /v1/video/:requestId |
+    | Authentication | ✅ Implemented | Bearer token (nvapi_live_xxx) |
+    | Credit System | ✅ Implemented | Per-request billing |
+    | Rate Limiting | ✅ Implemented | Tier-based limits |
+    | Webhooks | 🚧 Planned | Async notifications |
+    | Account API | 🚧 Planned | Usage tracking endpoints |
+    | Crypto Payments | 🚧 Planned | Coinbase Commerce |
+
+    ---
+
+    ## Quick Start
+
+    ```bash
+    # 1. Get API key from admin (contact support@example.com)
+
+    # 2. Test authentication
+    curl https://telegram-ai-bot-4esd.onrender.com/v1/health
+
+    # 3. Generate video
+    curl -X POST https://telegram-ai-bot-4esd.onrender.com/v1/video/generate \
+      -H "Authorization: Bearer nvapi_live_YOUR_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"image": "BASE64_IMAGE", "template": "tops_remove", "quality_preset": "fast"}'
+
+    # 4. Poll for result
+    curl https://telegram-ai-bot-4esd.onrender.com/v1/video/req_xxx \
+      -H "Authorization: Bearer nvapi_live_YOUR_KEY"
+    ```
+
+    ---
+
+    ## Output Specifications
+
+    | Property | Value |
+    |----------|-------|
+    | Resolution | 832 x 480 (16:9) |
+    | Frame Rate | 32 fps (after FILM VFI) |
+    | Duration | ~5 seconds |
+    | Codec | H.264 |
+    | Container | MP4 |
+    | Output | Base64 encoded |
+
+    ---
+
+    ## Quality Presets & Pricing
+
+    | Preset | Steps | Credits | Est. Time | Use Case |
+    |--------|-------|---------|-----------|----------|
+    | `ultra_fast` | 2 | 25 | ~1 min | Quick preview |
+    | `fast` | 4 | 35 | ~2 min | Drafts |
+    | `balanced` | 8 | 50 | ~4 min | Production (default) |
+    | `quality` | 12 | 75 | ~6 min | High quality |
+
+    **Tier Discounts**: basic 20%, pro 40%, enterprise 60%
+
+    ---
+
+    ## Templates (21 available)
+
+    Templates are DB-driven and may expand over time. The list below reflects currently available templates.
+
+    | Template | Category | Description |
+    |----------|----------|-------------|
+    | `all_take_off` | Undress | Full undress (default) |
+    | `tops_remove` | Undress | Top removal only |
+    | `bottoms_remove` | Undress | Bottom removal only |
+    | `smashcut` | Special | Scene-cut transition (use with timestamped prompt) |
+    | `nipple_play` | Breast | Nipple play |
+    | `massage_tits` | Breast | Breast massage |
+    | `breast_rub` | Breast | Breast rubbing |
+    | `nipple_suck` | Breast | Nipple sucking |
+    | `paizuri` | Breast | Titfuck/Paizuri |
+    | `cunnilingus` | Oral | Cunnilingus |
+    | `blowjob` | Oral | Blowjob |
+    | `french_kiss` | Oral | French kiss (3rd person) |
+    | `analingus` | Oral | Analingus |
+    | `handjob` | Position | Handjob |
+    | `missionary` | Position | Missionary |
+    | `doggy` | Position | Doggy style |
+    | `cowgirl` | Position | Cowgirl |
+    | `assertive_cowgirl` | Position | Assertive cowgirl |
+    | `bottom_pov` | Position | Bottom POV angle |
+    | `rub_pussy` | Solo | Pussy rubbing (solo or couple) |
+    | `pov_kissing` | POV | POV kissing (1st person) |
+
+    Override any template's default prompt with the custom `prompt` parameter.
+
+    ## LoRA Parameters (v1.0.131)
+
+    Fine-tune LoRA strengths at runtime without Docker rebuild:
+
+    | Parameter | Type | Range | Default | Description |
+    |-----------|------|-------|---------|-------------|
+    | `rip_strength` | float | 0.0~1.5 | template config | Override rip-shura strength |
+    | `action_strength` | float | 0.0~1.5 | template config | Override action LoRA strength |
+    | `use_rip_shura` | bool | - | true | Enable/disable rip-shura |
+    | `use_action_lora` | bool | - | true | Enable/disable action LoRA |
+
+    ---
+
+    ## Rate Limits
+
+    | Tier | Per Minute | Per Day |
+    |------|------------|---------|
+    | free | 10 | 100 |
+    | basic | 20 | 500 |
+    | pro | 60 | 2000 |
+    | enterprise | 200 | unlimited |
+
+  contact:
+    email: alkamayo@gmail.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://telegram-ai-bot-4esd.onrender.com/v1
+    description: Production
+
+tags:
+  - name: Video Generation
+    description: |
+      **Status**: ✅ Fully Implemented
+
+      Image-to-video conversion endpoints.
+
+      ## Python Example
+
+      ```python
+      import requests
+      import base64
+      import time
+
+      API_BASE = "https://telegram-ai-bot-4esd.onrender.com/v1"
+      API_TOKEN = "nvapi_live_YOUR_KEY"
+
+      headers = {
+          "Authorization": f"Bearer {API_TOKEN}",
+          "Content-Type": "application/json"
+      }
+
+      def generate_video(image_path, template="all_take_off", quality="balanced"):
+          with open(image_path, "rb") as f:
+              image_base64 = base64.b64encode(f.read()).decode()
+
+          # Create job
+          response = requests.post(
+              f"{API_BASE}/video/generate",
+              headers=headers,
+              json={
+                  "image": image_base64,
+                  "template": template,
+                  "quality_preset": quality
+              }
+          )
+          data = response.json()
+          request_id = data["request_id"]
+          print(f"Job created: {request_id}, credits charged: {data['credits_charged']}")
+
+          # Poll until complete
+          while True:
+              status = requests.get(
+                  f"{API_BASE}/video/{request_id}",
+                  headers=headers
+              ).json()
+
+              print(f"Status: {status['status']}")
+
+              if status["status"] == "completed":
+                  # Save video
+                  video_data = base64.b64decode(status["video"])
+                  with open("output.mp4", "wb") as f:
+                      f.write(video_data)
+                  print("Video saved!")
+                  break
+              elif status["status"] == "failed":
+                  print(f"Error: {status.get('error')}")
+                  break
+
+              time.sleep(10)
+
+      # Usage
+      generate_video("input.jpg", "tops_remove", "fast")
+      ```
+
+      ## cURL Example
+
+      ```bash
+      # Create job
+      curl -X POST https://telegram-ai-bot-4esd.onrender.com/v1/video/generate \
+        -H "Authorization: Bearer nvapi_live_YOUR_KEY" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "image": "'$(base64 -i input.jpg)'",
+          "template": "tops_remove",
+          "quality_preset": "fast"
+        }'
+
+      # Response: {"request_id": "req_xxx", "status": "processing", ...}
+
+      # Check status
+      curl https://telegram-ai-bot-4esd.onrender.com/v1/video/req_xxx \
+        -H "Authorization: Bearer nvapi_live_YOUR_KEY"
+      ```
+
+      ## JavaScript/Node.js Example
+
+      ```javascript
+      const fs = require('fs');
+
+      const API_BASE = 'https://telegram-ai-bot-4esd.onrender.com/v1';
+      const API_TOKEN = 'nvapi_live_YOUR_KEY';
+
+      async function generateVideo(imagePath, options = {}) {
+        const imageBase64 = fs.readFileSync(imagePath).toString('base64');
+
+        // Create job
+        const response = await fetch(`${API_BASE}/video/generate`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            image: imageBase64,
+            template: options.template || 'all_take_off',
+            quality_preset: options.quality || 'balanced'
+          })
+        });
+
+        const job = await response.json();
+        console.log('Job created:', job.request_id);
+
+        // Poll for result
+        while (true) {
+          const statusRes = await fetch(`${API_BASE}/video/${job.request_id}`, {
+            headers: { 'Authorization': `Bearer ${API_TOKEN}` }
+          });
+          const status = await statusRes.json();
+
+          if (status.status === 'completed') {
+            const videoBuffer = Buffer.from(status.video, 'base64');
+            fs.writeFileSync('output.mp4', videoBuffer);
+            console.log('Video saved!');
+            break;
+          } else if (status.status === 'failed') {
+            console.error('Error:', status.error);
+            break;
+          }
+
+          await new Promise(r => setTimeout(r, 10000));
+        }
+      }
+
+      generateVideo('input.jpg', { template: 'tops_remove', quality: 'fast' });
+      ```
+
+  - name: Account
+    description: |
+      **Status**: 🚧 Planned
+
+      Account information and usage statistics.
+
+  - name: Credits
+    description: |
+      **Status**: ✅ Implemented
+
+      Crypto payment (Coinbase Commerce) and credit balance management.
+
+paths:
+  # ==========================================================================
+  # HEALTH - ✅ Implemented
+  # ==========================================================================
+  /health:
+    get:
+      tags: [Video Generation]
+      summary: Health check
+      description: Check if the API is running
+      operationId: healthCheck
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  service:
+                    type: string
+                    example: "nsfw-video-api"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ==========================================================================
+  # VIDEO GENERATION - ✅ Implemented
+  # ==========================================================================
+  /video/generate:
+    post:
+      tags: [Video Generation]
+      summary: Create video generation job
+      description: |
+        **Status**: ✅ Implemented
+
+        Submit a video generation request. Returns immediately with a request_id.
+        Poll `/video/{request_id}` for status and result.
+      operationId: createVideo
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoGenerateRequest"
+            examples:
+              basic:
+                summary: Basic with template
+                value:
+                  image: "/9j/4AAQSkZJRg..."
+                  template: "tops_remove"
+                  quality_preset: "fast"
+              custom_prompt:
+                summary: Custom prompt
+                value:
+                  image: "/9j/4AAQSkZJRg..."
+                  prompt: "A woman slowly removes her dress..."
+                  quality_preset: "quality"
+                  seed: 42
+              advanced:
+                summary: All parameters
+                value:
+                  image: "/9j/4AAQSkZJRg..."
+                  template: "blowjob"
+                  prompt: "Custom description..."
+                  negative_prompt: "blur, artifacts"
+                  quality_preset: "quality"
+                  steps: 12
+                  cfg: 1.0
+                  num_frames: 97
+                  fps: 16
+                  crf: 10
+                  seed: 42
+                  rip_strength: 0.55
+                  action_strength: 0.80
+                  use_rip_shura: true
+                  use_action_lora: true
+      responses:
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoGenerateResponse"
+              example:
+                request_id: "req_mkeb3hgt_43e0664d8de13c78"
+                status: "processing"
+                estimated_time_seconds: 120
+                credits_charged: 35
+                message: "Video generation started. Poll GET /v1/video/req_mkeb3hgt_43e0664d8de13c78 for status."
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missing_image:
+                  value:
+                    error: "invalid_request"
+                    message: "Missing required field: image (Base64 encoded)"
+                invalid_template:
+                  value:
+                    error: "invalid_template"
+                    message: "Invalid or disabled template: xxx. Available: all_take_off, tops_remove, bottoms_remove"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/InsufficientCredits"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /video/{request_id}:
+    get:
+      tags: [Video Generation]
+      summary: Get video status and result
+      description: |
+        **Status**: ✅ Implemented
+
+        Check job status. When `status` is `completed`, the `video` field contains
+        the Base64-encoded MP4 video.
+
+        > **⚠️ Important**: Video data is not persisted after delivery. The `video` field
+        > is only present on the **first** response where `status: completed`. Save the
+        > video immediately. Subsequent polls for the same `request_id` will return
+        > `status: completed` but without the `video` field.
+      operationId: getVideoStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "req_mkeb3hgt_43e0664d8de13c78"
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoStatusResponse"
+              examples:
+                processing:
+                  summary: Still processing
+                  value:
+                    request_id: "req_mkeb3hgt_43e0664d8de13c78"
+                    status: "processing"
+                    created_at: "2026-01-14T17:20:00Z"
+                completed:
+                  summary: Completed with video
+                  value:
+                    request_id: "req_mkeb3hgt_43e0664d8de13c78"
+                    status: "completed"
+                    video: "AAAAIGZ0eXBpc29tAA..."
+                    metadata:
+                      width: 832
+                      height: 480
+                      frames: 162
+                      fps: 32
+                      duration: "5.06s"
+                    created_at: "2026-01-14T17:20:00Z"
+                    completed_at: "2026-01-14T17:22:30Z"
+                    processing_time_ms: 150000
+                failed:
+                  summary: Failed
+                  value:
+                    request_id: "req_mkeb3hgt_43e0664d8de13c78"
+                    status: "failed"
+                    error: "Video generation failed"
+                    created_at: "2026-01-14T17:20:00Z"
+                    completed_at: "2026-01-14T17:21:00Z"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "forbidden"
+                message: "You do not have access to this request"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "not_found"
+                message: "Request req_xxx not found"
+
+  # ==========================================================================
+  # BILLING - ✅ Implemented (NOWPayments — USDT-TRC20 primary)
+  # Designed for autonomous AI agents: deposit-address flow, no hosted page,
+  # no human interaction required. Send the exact pay_amount, credits land
+  # automatically on-chain confirmation.
+  # ==========================================================================
+  /billing/packages:
+    get:
+      tags: [Credits]
+      summary: List available credit packages
+      description: |
+        **Status**: ✅ Implemented
+
+        Returns available credit packages for purchase. No authentication required.
+      operationId: listPackages
+      responses:
+        "200":
+          description: Available packages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackageListResponse"
+              example:
+                packages:
+                  - key: starter
+                    amount_usd: 10
+                    credits: 1000
+                    bonus_percent: 0
+                    price_per_credit_usd: "0.0100"
+                  - key: growth
+                    amount_usd: 50
+                    credits: 6000
+                    bonus_percent: 20
+                    price_per_credit_usd: "0.0083"
+
+  /billing/currencies:
+    get:
+      tags: [Credits]
+      summary: List supported pay currencies
+      description: |
+        **Status**: ✅ Implemented
+
+        Returns the list of pay_currency codes accepted by `/billing/topup-address`.
+        Default and recommended for autonomous agents: `usdttrc20`.
+      operationId: listPayCurrencies
+      responses:
+        "200":
+          description: Supported currencies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrenciesResponse"
+              example:
+                default: usdttrc20
+                supported: [usdttrc20, usdtbsc, usdcbase, usdcsol, btc]
+                notes:
+                  usdttrc20: "USDT on TRON — recommended (lowest fees, fastest)"
+                  usdcbase: "USDC on Base — agent-ecosystem friendly"
+
+  /billing/topup-address:
+    post:
+      tags: [Credits]
+      summary: Create a crypto deposit address (NOWPayments)
+      description: |
+        **Status**: ✅ Implemented (replaces deprecated `/billing/charge`)
+
+        Creates a NOWPayments deposit address for autonomous, programmatic top-ups.
+        Designed for AI agents — no hosted page, no redirect, no human action required.
+
+        **Flow**:
+        1. Agent calls this endpoint with desired package and pay_currency
+        2. Response contains `pay_address` and exact `pay_amount`
+        3. Agent's wallet sends EXACTLY `pay_amount` to `pay_address`
+        4. Credits are added automatically once tx is confirmed on-chain
+        5. Poll `/billing/topup-status/{paymentId}` or `/billing/balance` for status
+
+        **Important**: Send the exact `pay_amount`. Underpayment results in
+        `partially_paid` status and credits are NOT granted.
+
+        Default pay_currency: `usdttrc20` (lowest fees, ~$0.3-1 per tx, 3 sec finality).
+      operationId: createTopupAddress
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [package]
+              properties:
+                package:
+                  type: string
+                  enum: [starter, standard, growth, pro]
+                  description: Credit package to purchase
+                pay_currency:
+                  type: string
+                  enum: [usdttrc20, usdtbsc, usdcbase, usdcsol, btc]
+                  default: usdttrc20
+                  description: Crypto to pay with
+            example:
+              package: growth
+              pay_currency: usdttrc20
+      responses:
+        "201":
+          description: Deposit address created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopupAddressResponse"
+              example:
+                payment_id: "5077125051"
+                pay_address: "TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                pay_amount: 50.0
+                pay_currency: "usdttrc20"
+                amount_usd: 50
+                credits: 6000
+                bonus_percent: 20
+                expires_at: "2026-05-10T01:14:00Z"
+                order_id: "topup_abc-123_1715300000000"
+                message: "Send exactly 50 USDTTRC20 to TXxx... — credits land automatically on confirmation."
+        "400":
+          description: Invalid package or pay_currency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          description: Payment provider error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /billing/topup-status/{paymentId}:
+    get:
+      tags: [Credits]
+      summary: Get deposit payment status
+      description: |
+        **Status**: ✅ Implemented
+
+        Polls NOWPayments for the live status of a deposit payment.
+        Useful when the IPN webhook is delayed or you want immediate confirmation.
+
+        Status lifecycle:
+          waiting → confirming → confirmed → sending → finished  (success)
+          waiting → expired                                       (no payment)
+          any → failed | refunded | partially_paid               (error)
+      operationId: getTopupStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment status from NOWPayments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TopupStatusResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          description: Payment provider error
+
+  /billing/deposits:
+    get:
+      tags: [Credits]
+      summary: List deposit invoices for this user
+      description: |
+        **Status**: ✅ Implemented
+
+        Returns paginated list of NOWPayments deposit invoices (pending + completed)
+        for the authenticated user.
+      operationId: listDeposits
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Deposit history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /billing/charge:
+    post:
+      tags: [Credits]
+      summary: "[DEPRECATED] Coinbase Commerce charge"
+      description: |
+        **Status**: ❌ Deprecated — returns 410 Gone.
+
+        Migrate to `POST /billing/topup-address` with `pay_currency: usdttrc20`.
+      deprecated: true
+      operationId: createCharge
+      security:
+        - BearerAuth: []
+      responses:
+        "410":
+          description: Gone — use /billing/topup-address instead
+
+  /billing/balance:
+    get:
+      tags: [Credits]
+      summary: Get current credit balance
+      description: |
+        **Status**: ✅ Implemented
+      operationId: getBillingBalance
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceResponse"
+              example:
+                credits_balance: 5980
+                credits_used: 20
+                tier: pro
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /billing/history:
+    get:
+      tags: [Credits]
+      summary: Get credit transaction history
+      description: |
+        **Status**: ✅ Implemented
+
+        Returns paginated credit transaction history (deposits, charges, refunds).
+      operationId: getBillingHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Transaction history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionHistoryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        **Status**: ✅ Implemented
+
+        API key in format `nvapi_live_xxxx...`
+
+        ```
+        Authorization: Bearer nvapi_live_YOUR_API_KEY
+        ```
+
+        Contact support to obtain an API key.
+
+  schemas:
+    # ========================================================================
+    # VIDEO GENERATION - ✅ Implemented
+    # ========================================================================
+    VideoGenerateRequest:
+      type: object
+      required: [image]
+      properties:
+        image:
+          type: string
+          description: Base64-encoded image (JPEG/PNG/WebP, max 10MB)
+        template:
+          type: string
+          enum:
+            [
+              all_take_off,
+              tops_remove,
+              bottoms_remove,
+              smashcut,
+              nipple_play,
+              massage_tits,
+              breast_rub,
+              nipple_suck,
+              paizuri,
+              cunnilingus,
+              blowjob,
+              french_kiss,
+              analingus,
+              handjob,
+              missionary,
+              doggy,
+              cowgirl,
+              assertive_cowgirl,
+              bottom_pov,
+              rub_pussy,
+              pov_kissing,
+            ]
+          default: all_take_off
+          description: Video generation template (21 templates available, see Templates section)
+        prompt:
+          type: string
+          maxLength: 500
+          description: Custom prompt (overrides template default)
+        negative_prompt:
+          type: string
+          maxLength: 500
+          description: What to avoid in generation
+        quality_preset:
+          type: string
+          enum: [ultra_fast, fast, balanced, quality]
+          default: balanced
+          description: Quality/speed tradeoff
+        steps:
+          type: integer
+          minimum: 1
+          maximum: 50
+          description: Override preset steps
+        cfg:
+          type: number
+          minimum: 0.1
+          maximum: 20.0
+          default: 1.0
+          description: Guidance scale
+        num_frames:
+          type: integer
+          minimum: 17
+          maximum: 129
+          default: 97
+          description: Frame count (before FILM VFI 2x)
+        fps:
+          type: integer
+          minimum: 8
+          maximum: 24
+          default: 16
+          description: FPS (before FILM VFI 2x)
+        crf:
+          type: integer
+          minimum: 0
+          maximum: 51
+          default: 10
+          description: H.264 quality (lower = better)
+        scheduler:
+          type: string
+          default: simple
+          description: Noise scheduler (simple, beta, etc.)
+        width:
+          type: integer
+          maximum: 1280
+          description: Output width (auto-scaled by default)
+        height:
+          type: integer
+          maximum: 720
+          description: Output height (auto-scaled by default)
+        seed:
+          type: integer
+          default: -1
+          description: Random seed (-1 for random)
+        webhook_url:
+          type: string
+          format: uri
+          description: "🚧 Planned - Completion callback URL"
+        rip_strength:
+          type: number
+          minimum: 0.0
+          maximum: 1.5
+          description: Override rip-shura LoRA strength (default uses template config)
+        action_strength:
+          type: number
+          minimum: 0.0
+          maximum: 1.5
+          description: Override action LoRA strength (default uses template config)
+        use_rip_shura:
+          type: boolean
+          default: true
+          description: Enable/disable rip-shura LoRA
+        use_action_lora:
+          type: boolean
+          default: true
+          description: Enable/disable action LoRA
+
+    VideoGenerateResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: Unique request identifier
+          example: "req_mkeb3hgt_43e0664d8de13c78"
+        status:
+          type: string
+          enum: [processing]
+          example: "processing"
+        estimated_time_seconds:
+          type: integer
+          description: Estimated completion time
+          example: 120
+        credits_charged:
+          type: number
+          description: Credits deducted for this request
+          example: 14
+        message:
+          type: string
+          description: Instructions for polling
+          example: "Video generation started. Poll GET /v1/video/req_xxx for status."
+
+    VideoStatusResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        video:
+          type: string
+          description: Base64-encoded MP4 (only when completed)
+        metadata:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+            frames:
+              type: integer
+            fps:
+              type: integer
+            duration:
+              type: string
+            seed:
+              type: integer
+            steps:
+              type: integer
+            cfg:
+              type: number
+            crf:
+              type: integer
+            vfi_applied:
+              type: boolean
+            lora_applied:
+              type: string
+        error:
+          type: string
+          description: Error message (only when failed)
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        processing_time_ms:
+          type: integer
+
+    # ========================================================================
+    # BILLING - ✅ Implemented
+    # ========================================================================
+    PackageListResponse:
+      type: object
+      properties:
+        packages:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                enum: [starter, standard, growth, pro]
+              amount_usd:
+                type: number
+              credits:
+                type: integer
+              bonus_percent:
+                type: integer
+              price_per_credit_usd:
+                type: string
+
+    ChargeResponse:
+      type: object
+      properties:
+        charge_id:
+          type: string
+          description: Coinbase Commerce charge UUID
+        charge_code:
+          type: string
+          description: Human-readable charge code
+        hosted_url:
+          type: string
+          format: uri
+          description: Redirect user here to complete payment
+        expires_at:
+          type: string
+          format: date-time
+        credits:
+          type: integer
+          description: Credits to be added upon confirmation
+        amount_usd:
+          type: number
+        bonus_percent:
+          type: integer
+        message:
+          type: string
+
+    BalanceResponse:
+      type: object
+      properties:
+        credits_balance:
+          type: number
+        credits_used:
+          type: number
+        tier:
+          type: string
+          enum: [free, basic, pro, enterprise]
+
+    TransactionHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              type:
+                type: string
+                enum: [deposit, charge, refund, bonus, manual]
+              amount:
+                type: number
+              balance_after:
+                type: number
+              payment_provider:
+                type: string
+                example: coinbase_commerce
+              crypto_currency:
+                type: string
+                example: USDC
+              description:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    TopupAddressResponse:
+      type: object
+      description: |
+        Response from `POST /billing/topup-address`. The `pay_address` is the deposit
+        address the customer/agent must send EXACTLY `pay_amount` of `pay_currency` to.
+        Credits land automatically on on-chain confirmation (NOWPayments IPN).
+      required:
+        - payment_id
+        - pay_address
+        - pay_amount
+        - pay_currency
+        - amount_usd
+        - credits
+      properties:
+        payment_id:
+          type: string
+          description: NOWPayments payment_id — use with /billing/topup-status/{paymentId}
+          example: "5077125051"
+        pay_address:
+          type: string
+          description: Deposit address. Send EXACTLY pay_amount to this address.
+          example: "TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        pay_amount:
+          type: number
+          description: Exact crypto amount to send. Underpayment will not credit.
+          example: 50.0
+        pay_currency:
+          type: string
+          enum: [usdttrc20, usdtbsc, usdcbase, usdcsol, btc]
+          example: usdttrc20
+        amount_usd:
+          type: number
+          example: 50
+        credits:
+          type: integer
+          description: Credits to be granted on confirmation
+          example: 6000
+        bonus_percent:
+          type: integer
+          example: 20
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        order_id:
+          type: string
+          example: "topup_abc-123_1715300000000"
+        message:
+          type: string
+          description: Human-readable instructions
+
+    TopupStatusResponse:
+      type: object
+      description: |
+        Live status of a NOWPayments deposit payment, fetched directly from
+        the provider. Useful when IPN webhook is delayed.
+      properties:
+        payment_id:
+          type: string
+        payment_status:
+          type: string
+          enum:
+            [
+              waiting,
+              confirming,
+              confirmed,
+              sending,
+              partially_paid,
+              finished,
+              failed,
+              refunded,
+              expired,
+            ]
+          description: |
+            Lifecycle: waiting → confirming → confirmed → sending → finished (success).
+            Terminal failure paths: failed, refunded, partially_paid, expired.
+        pay_address:
+          type: string
+        price_amount:
+          type: number
+        price_currency:
+          type: string
+        pay_amount:
+          type: number
+        actually_paid:
+          type: number
+          description: Actual amount received on-chain (may differ from pay_amount)
+        pay_currency:
+          type: string
+        order_id:
+          type: string
+        order_description:
+          type: string
+        outcome_amount:
+          type: number
+        outcome_currency:
+          type: string
+
+    CurrenciesResponse:
+      type: object
+      description: List of pay_currency codes accepted by /billing/topup-address.
+      required: [default, supported]
+      properties:
+        default:
+          type: string
+          example: usdttrc20
+        supported:
+          type: array
+          items:
+            type: string
+            enum: [usdttrc20, usdtbsc, usdcbase, usdcsol, btc]
+          example: [usdttrc20, usdtbsc, usdcbase, usdcsol, btc]
+        notes:
+          type: object
+          additionalProperties:
+            type: string
+          description: Per-currency human-readable hints
+          example:
+            usdttrc20: "USDT on TRON — recommended (lowest fees, fastest)"
+            usdcbase: "USDC on Base — agent-ecosystem friendly"
+
+    DepositsResponse:
+      type: object
+      description: Paginated list of NOWPayments deposit invoices for the user.
+      properties:
+        deposits:
+          type: array
+          items:
+            type: object
+            properties:
+              payment_id:
+                type: string
+              status:
+                type: string
+              amount_usd:
+                type: number
+              pay_amount:
+                type: number
+              pay_currency:
+                type: string
+              pay_address:
+                type: string
+              credits:
+                type: integer
+              tx_hash:
+                type: string
+                nullable: true
+              actual_paid:
+                type: number
+                nullable: true
+              credited_at:
+                type: string
+                format: date-time
+                nullable: true
+              created_at:
+                type: string
+                format: date-time
+              expires_at:
+                type: string
+                format: date-time
+                nullable: true
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    # ========================================================================
+    # COMMON
+    # ========================================================================
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          description: Additional error details
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missing_header:
+              value:
+                error: "unauthorized"
+                message: "Missing Authorization header"
+            invalid_format:
+              value:
+                error: "invalid_api_key"
+                message: "Invalid API key format"
+            invalid_key:
+              value:
+                error: "invalid_api_key"
+                message: "API key not found or invalid"
+            suspended:
+              value:
+                error: "account_suspended"
+                message: "Your account has been suspended"
+
+    InsufficientCredits:
+      description: Insufficient credits
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "insufficient_credits"
+            message: "Not enough credits. Required: 50, Available: 10"
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit-Minute:
+          schema:
+            type: integer
+        X-RateLimit-Remaining-Minute:
+          schema:
+            type: integer
+        X-RateLimit-Limit-Day:
+          schema:
+            type: integer
+        X-RateLimit-Remaining-Day:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "rate_limit_exceeded"
+            message: "Rate limit exceeded. Try again later."
