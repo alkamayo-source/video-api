@@ -23,7 +23,7 @@
 | --------------- | -------------------------------------------------------------------------------- |
 | `packages/sdk/` | `@multiful/video-api-sdk` — Zero-deps TypeScript 클라이언트 (~6KB ESM/CJS)       |
 | `packages/mcp/` | `@multiful/video-api-mcp` — Cursor/Claude Desktop 용 MCP server (stdio, 7 tools) |
-| `openapi.yaml`  | API 스펙 (서버에서 미러링)                                                       |
+| `openapi.yaml`  | **API 스펙 — single source of truth** (서버 측은 raw URL로 redirect만)           |
 | `README.md`     | Quickstart — 사용자/에이전트 5분 통합 가이드                                     |
 
 **비범위**: API 서버 코드, DB 마이그레이션, 결제 처리 로직, 봇 코드 — 별도 운영 환경에 있음.
@@ -80,6 +80,20 @@ npm test
 npm run gen:types
 git diff packages/sdk/src/generated/  # 변경 확인
 ```
+
+### API 추가/변경 흐름 (cross-repo)
+
+새 엔드포인트 추가는 두 리포 동시 작업:
+
+1. **서버 측** (별도 비공개 운영 리포): 라우트 코드 + 미들웨어 + DB 변경
+2. **이 리포**: `openapi.yaml`에 엔드포인트 정의 추가
+3. `npm run gen:types` → `packages/sdk/src/generated/schema.ts` 갱신 확인
+4. SDK 클라이언트 surface (`packages/sdk/src/client.ts`)에 새 메서드 추가 (필요시)
+5. MCP tool 추가 (필요시)
+6. `npx changeset` → 변경 노트
+7. PR 머지 → CI가 "Version Packages" PR 생성 → 머지 시 npm publish
+
+> `openapi.yaml`이 single source of truth라 운영 서버 코드와 이 파일이 drift하지 않도록 주의. 서버 라우트만 추가하고 openapi 안 갱신하면 SDK 사용자는 그 엔드포인트 모름.
 
 ### 수정 후 릴리즈 흐름
 
